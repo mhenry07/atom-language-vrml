@@ -1,0 +1,281 @@
+# If this is your first time writing a language grammar, check out:
+#   - https://flight-manual.atom.io/hacking-atom/sections/creating-a-grammar/
+
+scopeName: 'source.vrml'
+name: 'VRML'
+fileTypes: [
+  'wrl'
+]
+firstLineMatch: '^#VRML\\b'
+patterns: [
+  {
+    include: '#brackets'
+  }
+  {
+    include: '#comma'
+  }
+  {
+    include: '#comment'
+  }
+  {
+    include: '#numbers'
+  }
+  {
+    include: '#strings'
+  }
+  {
+    # PROTO nodeTypeId [ proto_declarations ] { proto_body }
+    begin: '(?=\\bPROTO\\b)'
+    end: '(?<=})'
+    patterns: [
+      {
+        include: '#comment'
+      }
+      {
+        include: '#proto_body'
+      }
+      {
+        begin: '\\G'
+        end: '(?<=\\])'
+        name: 'meta.function.vrml'
+        patterns: [
+          {
+            include: '#proto_innards'
+          }
+        ]
+      }
+    ]
+  }
+  {
+    match: '\\b(DEF|EXTERNPROTO|IS|ROUTE|TO|USE|eventIn|eventOut|exposedField|field)\\b'
+    name: 'keyword.vrml'
+  }
+  {
+    match: '''(?x) \\b
+      (Anchor|Appearance|AudioClip|Background|Billboard|Box
+      |Collision|Color|ColorInterpolator|Cone|Coordinate|CoordinateInterpolator|Cylinder|CylinderSensor
+      |DirectionalLight|ElevationGrid|Extrusion|Fog|FontStyle|Group
+      |ImageTexture|IndexedFaceSet|IndexedLineSet|Inline|LOD
+      |Material|MovieTexture|NavigationInfo|Normal|NormalInterpolator|OrientationInterpolator
+      |PixelTexture|PlaneSensor|PointLight|PointSet|PositionInterpolator|ProximitySensor
+      |ScalarInterpolator|Script|Shape|Sound|Sphere|SphereSensor|SpotLight|Switch
+      |Text|TextureCoordinate|TextureTransform|TimeSensor|TouchSensor|Transform
+      |Viewpoint|VisibilitySensor|WorldInfo)
+      \\b'''
+    name: 'support.class.vrml'
+  }
+  {
+    include: '#boolean'
+  }
+  {
+    match: '\\b(NULL)\\b'
+    name: 'constant.language.null.vrml'
+  }
+  {
+    match: '''(?x) \\b
+      (MFColor|MFFloat|MFInt32|MFNode|MFRotation|MFString|MFTime|MFVec2f|MFVec3f
+      |SFBool|SFColor|SFFloat|SFImage|SFInt32|SFNode|SFRotation|SFString|SFTime|SFVec2f|SFVec3f)
+      \\b'''
+    name: 'support.type.fieldtype.vrml'
+  }
+]
+repository:
+  boolean:
+    match: '\\b(TRUE|FALSE)\\b'
+    name: 'constant.language.boolean.$1.vrml'
+  brackets:
+    begin: '\\['
+    end: '\\]'
+    name: 'meta.brace.square.vrml'
+    patterns: [
+      {
+        include: '$self'
+      }
+    ]
+  comma:
+    match: ','
+    name: 'meta.delimiter.object.comma.vrml'
+  comment:
+    begin: '#'
+    beginCaptures:
+      0: name: 'punctuation.definition.comment.vrml'
+    end: '\\n'
+    name: 'comment.line.vrml'
+  escaped_char:
+    match: '''(?x)
+      (\\\\\\\\)|
+      (\\\\\\")
+    '''
+  numbers:
+    patterns: [
+      {
+        match: '\\b0[xX][0-9a-fA-F]+\\b'
+        name: 'constant.numeric.hex.vrml'
+      }
+      {
+        match: '''(?x)
+          [-+]?
+          (?:
+            (?:\\b[0-9]+(\\.)[0-9]+[eE][-+]?[0-9]+\\b)| # 1.1E+3
+            (?:\\b[0-9]+(\\.)[eE][-+]?[0-9]+\\b)|       # 1.E+3
+            (?:\\B(\\.)[0-9]+[eE][-+]?[0-9]+\\b)|       # .1E+3
+            (?:\\b[0-9]+[eE][-+]?[0-9]+\\b)|            # 1E+3
+            (?:\\b[0-9]+(\\.)[0-9]+\\b)|                # 1.1
+            (?:\\b[0-9]+(\\.)\\B)|                      # 1.
+            (?:\\B(\\.)[0-9]+\\b)|                      # .1
+            (?:\\b[0-9]+\\b(?!\\.))                     # 1
+          )'''
+        captures:
+          0: name: 'constant.numeric.decimal.vrml'
+          1: name: 'meta.delimiter.decimal.period.vrml'
+          2: name: 'meta.delimiter.decimal.period.vrml'
+          3: name: 'meta.delimiter.decimal.period.vrml'
+          4: name: 'meta.delimiter.decimal.period.vrml'
+          5: name: 'meta.delimiter.decimal.period.vrml'
+          6: name: 'meta.delimiter.decimal.period.vrml'
+      }
+    ]
+  proto_innards:
+    patterns: [
+      {
+        match: '\\b(PROTO)\\b'
+        captures:
+          1: name: 'storage.type.prototype.vrml'
+      }
+      {
+        match: '[a-zA-Z_$][\\w$]*(?=\\s*\\()'
+        name: 'entity.name.prototype.vrml'
+      }
+      {
+        include: '#proto_declarations'
+      }
+      {
+        include: '#comment'
+      }
+    ]
+  proto_declarations:
+    patterns: [
+      {
+        begin: '\\['
+        beginCaptures:
+          0: name: 'punctuation.definition.parameters.begin.bracket.square.vrml'
+        end: '\\]'
+        endCaptures:
+          0: name: 'punctuation.definition.parameters.end.bracket.square.vrml'
+        name: 'meta.parameters.vrml'
+        patterns: [
+          {
+            match: '''(?x)
+              \\b(eventIn|eventOut|field|exposedField)\\b
+              [\\s,]+
+              (MFColor|MFFloat|MFInt32|MFNode|MFRotation|MFString|MFTime|MFVec2f|MFVec3f
+              |SFBool|SFColor|SFFloat|SFImage|SFInt32|SFNode|SFRotation|SFString|SFTime|SFVec2f|SFVec3f)
+              [\\s,]+
+              ([a-zA-Z_$][\\w$]*)
+              '''
+            captures:
+              1: name: 'storage.modifier.vrml'
+              2: name: 'support.type.fieldtype.vrml.vrml'
+              3: name: 'variable.declaration.name.vrml'
+          }
+          {
+            include: '#brackets'
+          }
+          {
+            include: '$self'
+          }
+        ]
+      }
+    ]
+  proto_body:
+    patterns: [
+      {
+        begin: '{'
+        beginCaptures:
+          0: name: 'punctuation.definition.prototype.body.begin.bracket.curly.vrml'
+        end: '}'
+        endCaptures:
+          0: name: 'punctuation.definition.prototype.body.end.bracket.curly.vrml'
+        patterns: [
+          {
+            include: '$self'
+          }
+        ]
+      }
+    ]
+  strings:
+    begin: '"'
+    beginCaptures:
+      0: name: 'punctuation.definition.string.begin.vrml'
+    end: '((?<=")(")|")'
+    endCaptures:
+      1: name: 'punctuation.definition.string.end.vrml'
+      2: name: 'meta.empty-string.double.vrml'
+    name: 'string.quoted.double.vrml'
+    patterns: [
+      {
+        include: '#embedded_script'
+      }
+      {
+        include: '#escaped_char'
+      }
+    ]
+  embedded_script:
+    begin: '\\G\\s*(?:(javascript)|(vrmlscript))\\:'
+    beginCaptures:
+      2: name: 'invalid.deprecated.vrmlscript.vrml'
+    end: '(?=")'
+    endCaptures:
+      0: name: 'punctuation.definition.string.end.vrml'
+    name: 'source.js.embedded.vrml'
+    patterns: [
+      {
+        include: '#escaped_char'
+      }
+      {
+        include: 'source.vrml.js'
+      }
+      {
+        include: '#boolean'
+      }
+      {
+        match: '''(?x)
+            \\b
+            (Browser
+            |SFColor|SFImage|SFNode|SFRotation|SFVec2f|SFVec3f
+            |MFColor|MFFloat|MFInt32|MFNode|MFRotation|MFString|MFTime|MFVec2f|MFVec3f
+            |VrmlMatrix)
+            \\b
+          '''
+        name: 'support.class.vrml.js'
+      }
+      {
+        match: '\\b(eventsProcessed|initialize|shutdown)(?=\\()'
+        name: 'support.function.vrml.js'
+      }
+      {
+        match: '''(?x)
+            (\\.)\\s*
+            (getName|getVersion|getCurrentSpeed|getCurrentFrameRate|getWorldURL|replaceWorld|createVrmlFromString|createVrmlFromURL|addRoute|deleteRoute|loadURL|setDescription
+            |setHSV|getHSV
+            |getAxis|inverse|multiply|multVec|setAxis|slerp
+            |add|divide|dot|length|normalize|subtract
+            |cross|negate
+            |setTransform|getTransform|transpose|multLeft|multRight|multVecMatrix|multMatrixVec)
+            (?=\\()
+          '''
+        captures:
+          1: name: 'meta.delimiter.function.period.vrml.js'
+          2: name: 'support.function.vrml.js'
+      }
+      {
+        match: '''(?x)
+            (\\.)\\s*
+            ([rgb]|[xyz]|comp|array|angle)
+            \\b
+          '''
+        captures:
+          1: name: 'meta.delimiter.property.period.vrml.js'
+          2: name: 'support.variable.property.vrml.js'
+      }
+    ]
